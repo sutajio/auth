@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Authorize <%= h(@client.name) %> to access your account</title>
+</head>
+<body>
+  <div class="dialog secure">
+    <h1>Authorize <%= h(@client.name) %> to access your account</h1>
+    <p><%= h(@client.name) %> is asking for access to your account.
+       We need to make sure it is OK with you.</p>
+    <form method="post">
+      <% if params[:response_type] %>
+      <input type="hidden" name="response_type" value="<%= cgi_escape(params[:response_type]) %>" />
+      <% end %>
+      <input type="hidden" name="client_id" value="<%= cgi_escape(params[:client_id]) %>" />
+      <input type="hidden" name="redirect_uri" value="<%= cgi_escape(params[:redirect_uri] || @client.redirect_uri) %>" />
+      <input type="hidden" name="scope" value="<%= cgi_escape(params[:scope]) %>" />
+      <input type="hidden" name="state" value="<%= cgi_escape(params[:state]) %>" />
+      <button type="submit">Yes, allow access</button>
+      <a href="<%= merge_uri_based_on_response_type(@client.redirect_uri, :error => 'access_denied', :error_reason => 'user_denied', :error_description => 'The user denied your request.', :state => params[:state]) %>">
+        No thanks, take me back to <%= h(@client.name) %>
+      </a>
+    </form>
+  </div>
+</body>
+</html>
