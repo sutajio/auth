@@ -5,23 +5,20 @@ module Auth
       def id; @id; end
     end
 
-    def authenticate!; end
-    def user; @user_id ? User.new(@user_id) : nil; end
-  end
-
-  class DummySentry < Sentry
-    def authenticate!
-      @user_id = 'dummy'
-    end
-  end
-
-  class RemoteSentry < Sentry
-    def initialize(url)
-      @url = url
+    def initialize(request)
+      @request = request
     end
 
     def authenticate!
-      raise NotImplemented
+      if Auth.authenticate_account(@request.params['username'], @request.params['password'])
+        @user_id = @request.params['username']
+      else
+        raise AuthException, 'Invalid username or password'
+      end
+    end
+
+    def user
+      @user_id ? User.new(@user_id) : nil
     end
   end
 end

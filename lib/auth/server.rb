@@ -54,10 +54,8 @@ module Auth
         end
       end
 
-      def require_account_authentication!
-        unless Auth.authenticate_account(params[:username], params[:password])
-          halt(403, 'Invalid username or password')
-        end
+      def sentry
+        @sentry ||= request.env['warden'] || request.env['rack.auth'] || Sentry.new(request)
       end
 
       def require_client_identification!
@@ -81,7 +79,7 @@ module Auth
     end
 
     error AuthException do
-      headers['Content-Type'] = 'application/json'
+      headers['Content-Type'] = 'application/json;charset=utf-8'
       [400, {
           :error => {
             :type => 'OAuthException',
@@ -107,7 +105,7 @@ module Auth
       get action do
         require_client_identification!
         validate_redirect_uri!
-        require_account_authentication!
+        sentry.authenticate!
         unless ['code', 'token', 'code_and_token', nil].include?(params[:response_type])
           raise UnsupportedResponseType,
             'The authorization server does not support obtaining an ' +
@@ -121,7 +119,7 @@ module Auth
       post action do
         require_client_identification!
         validate_redirect_uri!
-        require_account_authentication!
+        sentry.authenticate!
         case params[:response_type]
         when 'code', nil
           authorization_code = Auth.issue_code(sentry.user.id,
@@ -192,9 +190,9 @@ module Auth
             raise AuthException, 'Invalid authorization code'
           end
         when 'password'
-          require_account_authentication!
+          sentry.authenticate!
           ttl = ENV['AUTH_TOKEN_TTL'].to_i
-          access_token = Auth.issue_token(params[:username], params[:scope], ttl)
+          access_token = Auth.issue_token(sentry.user.id, params[:scope], ttl)
           @token = {
             :access_token => access_token,
             :token_type => 'bearer',
@@ -214,10 +212,10 @@ module Auth
           raise AuthException, 'Unsupported grant type'
         end
         if request.accept.include?('application/json')
-          headers['Content-Type'] = 'application/json'
+          headers['Content-Type'] = 'application/json;charset=utf-8'
           [200, @token.to_json]
         else
-          headers['Content-Type'] = 'application/x-www-form-urlencoded '
+          headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8'
           [200, query_string(@token)]
         end
       end
@@ -225,6 +223,7 @@ module Auth
 
     get '/validate' do
       require_client_authentication!
+      headers['Content-Type'] = 'text/plain;charset=utf-8'
       if account_id = Auth.validate_token(params[:access_token], params[:scope])
         [200, account_id]
       else

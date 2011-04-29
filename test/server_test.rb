@@ -10,6 +10,7 @@ class ServerTest < Test::Unit::TestCase
 
   def setup
     Auth.redis.flushall
+    Auth.register_account('test', 'test')
     @client = Auth.register_client('test-client', 'Test', 'https://example.com/callback')
     @authorization_code = Auth.issue_code('test-account', @client.id, @client.redirect_uri, 'read write')
   end
@@ -29,8 +30,12 @@ class ServerTest < Test::Unit::TestCase
       :client_id => @client.id,
       :redirect_uri => @client.redirect_uri,
       :scope => 'read write',
-      :state => 'opaque'
+      :state => 'opaque',
+      :username => 'test',
+      :password => 'test'
     assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response.headers['Content-Type']
+    assert_equal 'no-store', last_response.headers['Cache-Control']
     assert_match 'code', last_response.body
     assert_match @client.id.to_s, last_response.body
     assert_match 'https%3A%2F%2Fexample%2Ecom%2Fcallback', last_response.body
@@ -44,8 +49,11 @@ class ServerTest < Test::Unit::TestCase
       :client_id => @client.id,
       :redirect_uri => @client.redirect_uri,
       :scope => 'read write',
-      :state => 'opaque'
+      :state => 'opaque',
+      :username => 'test',
+      :password => 'test'
     assert_equal 302, last_response.status
+    assert_equal 'no-store', last_response.headers['Cache-Control']
     location_uri = URI(last_response.headers['Location'])
     assert_equal 'https', location_uri.scheme
     assert_equal 'example.com', location_uri.host
@@ -63,6 +71,8 @@ class ServerTest < Test::Unit::TestCase
       :code => @authorization_code
     }, 'HTTP_ACCEPT' => 'application/json'
     assert_equal 200, last_response.status
+    assert_equal 'application/json;charset=utf-8', last_response.headers['Content-Type']
+    assert_equal 'no-store', last_response.headers['Cache-Control']
     token = JSON.parse(last_response.body)
     assert token['access_token']
     assert_equal 'bearer', token['token_type']
@@ -71,7 +81,6 @@ class ServerTest < Test::Unit::TestCase
   end
 
   def test_request_for_access_token_using_password
-    Auth.register_account('test', 'test')
     post '/access_token', {
       :grant_type => 'password',
       :client_id => @client.id,
@@ -82,6 +91,8 @@ class ServerTest < Test::Unit::TestCase
       :password => 'test'
     }, 'HTTP_ACCEPT' => 'application/json'
     assert_equal 200, last_response.status
+    assert_equal 'application/json;charset=utf-8', last_response.headers['Content-Type']
+    assert_equal 'no-store', last_response.headers['Cache-Control']
     token = JSON.parse(last_response.body)
     assert token['access_token']
     assert_equal 'bearer', token['token_type']
@@ -98,6 +109,8 @@ class ServerTest < Test::Unit::TestCase
       :refresh_token => '?'
     }, 'HTTP_ACCEPT' => 'application/json'
     assert_equal 200, last_response.status
+    assert_equal 'application/json;charset=utf-8', last_response.headers['Content-Type']
+    assert_equal 'no-store', last_response.headers['Cache-Control']
     token = JSON.parse(last_response.body)
     assert token['access_token']
     assert_equal 'bearer', token['token_type']
@@ -113,6 +126,8 @@ class ServerTest < Test::Unit::TestCase
       :redirect_uri => @client.redirect_uri
     }, 'HTTP_ACCEPT' => 'application/json'
     assert_equal 200, last_response.status
+    assert_equal 'application/json;charset=utf-8', last_response.headers['Content-Type']
+    assert_equal 'no-store', last_response.headers['Cache-Control']
     token = JSON.parse(last_response.body)
     assert token['access_token']
     assert_equal 'client', token['token_type']
