@@ -60,9 +60,9 @@ module Auth
       hash = ENV['AUTH_HASH_ALGORITHM']
       salt = generate_secret
       crypted_password = encrypt_password(password, salt, hash)
-      redis.hset("account:#{username}", 'crypted_password', crypted_password)
-      redis.hset("account:#{username}", 'password_hash', hash)
-      redis.hset("account:#{username}", 'password_salt', salt)
+      redis.hmset("account:#{username}", 'crypted_password', crypted_password,
+                                         'password_hash', hash,
+                                         'password_salt', salt)
       return true
     else
       return false
@@ -90,9 +90,9 @@ module Auth
       hash = ENV['AUTH_HASH_ALGORITHM']
       salt = generate_secret
       crypted_password = encrypt_password(new_password, salt, hash)
-      redis.hset("account:#{username}", 'crypted_password', crypted_password)
-      redis.hset("account:#{username}", 'password_hash', hash)
-      redis.hset("account:#{username}", 'password_salt', salt)
+      redis.hmset("account:#{username}", 'crypted_password', crypted_password,
+                                         'password_hash', hash,
+                                         'password_salt', salt)
     end
   end
 
