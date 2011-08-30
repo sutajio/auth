@@ -18,7 +18,7 @@ module Auth
         end
       else
         if Auth.authenticate_account(@request.params['username'], @request.params['password'])
-          @user_id = @request.params['username']
+          @user = User.new(@request.params['username'])
         else
           raise AuthException, 'Invalid username or password'
         end
@@ -30,7 +30,7 @@ module Auth
       when :client
         @client ? @client : nil
       else
-        @user_id ? User.new(@user_id) : nil
+        @user ? @user : nil
       end
     end
   end
