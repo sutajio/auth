@@ -13,6 +13,12 @@ class AuthTest < Test::Unit::TestCase
     assert_equal 'namespace', Auth.redis.namespace
   end
 
+  def test_can_set_a_custom_sentry
+    assert_nil Auth.sentry
+    Auth.sentry = Auth::Sentry
+    assert_equal Auth::Sentry, Auth.sentry
+  end
+
   def test_can_register_an_account
     assert Auth.register_account('test', 'test')
   end

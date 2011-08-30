@@ -55,22 +55,16 @@ module Auth
       end
 
       def sentry
-        @sentry ||= request.env['warden'] || request.env['rack.auth'] || Sentry.new(request)
-      end
-
-      def require_client_identification!
-        @client = Auth.authenticate_client(params[:client_id])
-        halt(403, 'Invalid client identifier') unless @client
-      end
-
-      def require_client_authentication!
-        @client = Auth.authenticate_client(params[:client_id], params[:client_secret])
-        halt(403, 'Invalid client identifier or client secret') unless @client
+        if Auth.sentry
+          @sentry ||= Auth.sentry.new(request)
+        else
+          @sentry ||= request.env['warden'] || request.env['rack.auth'] || Sentry.new(request)
+        end
       end
 
       def validate_redirect_uri!
-        params[:redirect_uri] ||= @client.redirect_uri
-        if URI(params[:redirect_uri]).host.downcase != URI(@client.redirect_uri).host.downcase
+        params[:redirect_uri] ||= sentry.user(:client).redirect_uri
+        if URI(params[:redirect_uri]).host.downcase != URI(sentry.user(:client).redirect_uri).host.downcase
           halt(400, 'Invalid redirect URI')
         end
       rescue URI::InvalidURIError
@@ -103,7 +97,7 @@ module Auth
 
     ['', '/authorize'].each do |action|
       get action do
-        require_client_identification!
+        sentry.authenticate!(:client)
         validate_redirect_uri!
         sentry.authenticate!
         unless ['code', 'token', 'code_and_token', nil].include?(params[:response_type])
@@ -111,19 +105,20 @@ module Auth
             'The authorization server does not support obtaining an ' +
             'authorization code using this method.'
         end
+        @client = sentry.user(:client)
         erb(:authorize)
       end
     end
 
     ['', '/authorize'].each do |action|
       post action do
-        require_client_identification!
+        sentry.authenticate!(:client)
         validate_redirect_uri!
         sentry.authenticate!
         case params[:response_type]
         when 'code', nil
           authorization_code = Auth.issue_code(sentry.user.id,
-                                               params[:client_id],
+                                               sentry.user(:client).id,
                                                params[:redirect_uri],
                                                params[:scope])
           redirect_uri = merge_uri_with_query_parameters(
@@ -146,7 +141,7 @@ module Auth
         when 'code_and_token'
           ttl = ENV['AUTH_TOKEN_TTL'].to_i
           authorization_code = Auth.issue_code(sentry.user.id,
-                                               params[:client_id],
+                                               sentry.user(:client).id,
                                                params[:redirect_uri],
                                                params[:scope])
           access_token = Auth.issue_token(sentry.user.id, params[:scope], ttl)
@@ -170,12 +165,12 @@ module Auth
 
     ['/token', '/access_token'].each do |action|
       post action do
-        require_client_authentication!
+        sentry.authenticate!(:client)
         validate_redirect_uri!
         case params[:grant_type]
         when 'authorization_code', nil
           account_id, scopes = Auth.validate_code(
-            params[:code], params[:client_id], params[:redirect_uri])
+            params[:code], sentry.user(:client).id, params[:redirect_uri])
           if account_id
             ttl = ENV['AUTH_TOKEN_TTL'].to_i
             access_token = Auth.issue_token(account_id, scopes, ttl)
@@ -203,7 +198,7 @@ module Auth
         when 'refresh_token'
           raise AuthException, 'Unsupported grant type'
         when 'client_credentials'
-          access_token = Auth.issue_token("client:#{@client.id}")
+          access_token = Auth.issue_token("client:#{sentry.user(:client).id}")
           @token = {
             :access_token => access_token,
             :token_type => 'client'
@@ -222,7 +217,7 @@ module Auth
     end
 
     get '/validate' do
-      require_client_authentication!
+      sentry.authenticate!(:client)
       headers['Content-Type'] = 'text/plain;charset=utf-8'
       if account_id = Auth.validate_token(params[:access_token], params[:scope])
         [200, account_id]

@@ -50,6 +50,18 @@ module Auth
   end
 
   #
+  # Sentry
+  #
+
+  def sentry=(sentry)
+    @sentry = sentry
+  end
+
+  def sentry
+    @sentry
+  end
+
+  #
   # Accounts
   #
 
