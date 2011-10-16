@@ -66,7 +66,7 @@ module Auth
 
       def validate_redirect_uri!
         params[:redirect_uri] ||= sentry.user(:client).redirect_uri
-        if URI(params[:redirect_uri]).host.downcase != URI(sentry.user(:client).redirect_uri).host.downcase
+        if URI(params[:redirect_uri]).host.to_s.downcase != URI(sentry.user(:client).redirect_uri).host.to_s.downcase
           halt(400, 'Invalid redirect URI')
         end
       rescue URI::InvalidURIError
