@@ -1,3 +1,9 @@
+*0.0.4*
+
+* Fixed some problems related to exception handling
+* Fixed a bug in the validation of redirect_uri
+* Removed the possibility to run the server stand-alone
+
 *0.0.3*
 
 * Added json gem dependency
