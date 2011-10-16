@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.name        = 'auth'
   s.version     = Auth::Version
   s.summary     = 'Auth is a Redis-backed high performance OAuth2 authorization server.'
-  s.description = 'A high performance OAuth2 authorization server using Sinatra and Redis, inspired by Resque. Can be run both as a standalone server or as a rack middleware.'
+  s.description = 'A high performance OAuth2 authorization server using Sinatra and Redis, inspired by Resque.'
 
   s.author      = 'Niklas Holmgren'
   s.email       = 'niklas@sutajio.se'
