@@ -12,6 +12,8 @@ module Auth
     set :views,  "#{dir}/server/views"
     set :public, "#{dir}/server/public"
     set :static, true
+    set :raise_errors, true
+    set :show_exceptions, true if development?
 
     helpers do
       include Rack::Utils

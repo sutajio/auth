@@ -14,13 +14,13 @@ module Auth
       when :client
         @client = Auth.authenticate_client(@request.params['client_id'], @request.params['client_secret'])
         unless @client
-          raise AuthException, 'Invalid client'
+          raise UnauthorizedClient, 'Invalid client'
         end
       else
         if Auth.authenticate_account(@request.params['username'], @request.params['password'])
           @user = User.new(@request.params['username'])
         else
-          raise AuthException, 'Invalid username or password'
+          raise AccessDenied, 'Invalid username or password'
         end
       end
     end
