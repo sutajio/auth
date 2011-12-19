@@ -1,3 +1,7 @@
+*0.0.6*
+
+* Added a Rack middleware
+
 *0.0.4*
 
 * Fixed some problems related to exception handling
