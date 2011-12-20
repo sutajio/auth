@@ -1,14 +1,23 @@
 require 'base64'
 require 'digest/sha2'
 
+begin
+  require 'securerandom'
+rescue LoadError
+end
+
 module Auth
   module Helpers
 
     # Generate a unique cryptographically secure secret
     def generate_secret
-      Base64.encode64(
-        Digest::SHA256.digest("#{Time.now}-#{rand}")
-      ).gsub('/','x').gsub('+','y').gsub('=','').strip
+      if defined?(SecureRandom)
+        SecureRandom.urlsafe_base64(32)
+      else
+        Base64.encode64(
+          Digest::SHA256.digest("#{Time.now}-#{Time.now.usec}-#{$$}-#{rand}")
+        ).gsub('/','-').gsub('+','_').gsub('=','').strip
+      end
     end
 
     # Obfuscate a password using a salt and a cryptographic hash function
