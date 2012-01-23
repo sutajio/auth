@@ -7,6 +7,8 @@ require 'test/unit'
 require 'rack/test'
 require 'auth'
 
+Auth.secret = 'test'
+
 #
 # make sure we can run redis
 #

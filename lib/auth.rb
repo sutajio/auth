@@ -50,6 +50,22 @@ module Auth
   end
 
   #
+  # Secret
+  #
+
+  def secret=(secret)
+    @secret = secret
+  end
+
+  def secret
+    if @secret
+      @secret
+    else
+      raise 'Missing secret key'
+    end
+  end
+
+  #
   # Sentry
   #
 
@@ -176,7 +192,8 @@ module Auth
   #
 
   def issue_token(account_id, scopes = nil, ttl = nil)
-    token = generate_secret
+    token = "1|#{account_id}|#{scopes}|#{ttl}|#{Time.now.utc.to_i}"
+    token = urlsafe_base64_encode("#{token}|#{hmac(secret, token)}")
     redis.set("token:#{token}:account", account_id)
     decode_scopes(scopes).each do |scope|
       redis.sadd("token:#{token}:scopes", scope)
@@ -189,6 +206,17 @@ module Auth
   end
 
   def validate_token(token, scopes = nil)
+    parts = urlsafe_base64_decode(token).split('|')
+    if hmac(secret, parts[0..-2].join('|')) != parts.last
+      return false
+    end
+    if parts[3] && (Time.new(parts[4]) + parts[3].to_i) < Time.now.utc
+      return false
+    end
+
+    puts "toke:#{urlsafe_base64_decode(token)}"
+    #puts "sign:#{parts.last}"
+
     account_id = redis.get("token:#{token}:account")
     if account_id && 
        decode_scopes(scopes).all? {|scope|

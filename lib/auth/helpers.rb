@@ -1,5 +1,6 @@
 require 'base64'
 require 'digest/sha2'
+require 'openssl'
 
 begin
   require 'securerandom'
@@ -9,15 +10,30 @@ end
 module Auth
   module Helpers
 
+    # Base64 encode a string in a way that is safe to include in a URL
+    def urlsafe_base64_encode(str)
+      Base64.encode64(str).gsub('/','-').gsub('+','_').gsub('=','').strip
+    end
+
+    # Decode a string that has been encoded with the urlsafe_base64_encode method
+    def urlsafe_base64_decode(str)
+      Base64.decode64(str.gsub('-','/').gsub('_','+') + '==')
+    end
+
     # Generate a unique cryptographically secure secret
     def generate_secret
       if defined?(SecureRandom)
         SecureRandom.urlsafe_base64(32)
       else
-        Base64.encode64(
+        urlsafe_base64(
           Digest::SHA256.digest("#{Time.now}-#{Time.now.usec}-#{$$}-#{rand}")
-        ).gsub('/','-').gsub('+','_').gsub('=','').strip
+        )
       end
+    end
+
+    # Generate a crypthographically secure signature
+    def hmac(key, data)
+      OpenSSL::HMAC.hexdigest(OpenSSL::Digest::Digest.new('sha1'), key, data)
     end
 
     # Obfuscate a password using a salt and a cryptographic hash function

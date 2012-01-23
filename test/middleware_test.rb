@@ -22,7 +22,8 @@ class MiddlewareTest < Test::Unit::TestCase
   end
 
   def test_authenticated_request
-    token = Auth.issue_token('test-user')
+    token = Auth.issue_token('test-user', 'read write', 3600)
+    puts token
     env = Rack::MockRequest.env_for('/test',
       'HTTP_AUTHORIZATION' => "Bearer #{Base64.encode64(token)}")
     res = app.call(env)
