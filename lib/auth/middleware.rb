@@ -50,8 +50,17 @@ module Auth
           :bearer == scheme
         end
 
+        def provided?
+          super || request.params['access_token']
+        end
+
+        def parts
+          authorization_key ? super : ['Bearer', nil]
+        end
+
         def access_token
-          @access_token ||= params.unpack("m*").first
+          @access_token ||= params ? params.unpack("m*").first :
+                                     request.params['access_token']
         end
 
         def account_id

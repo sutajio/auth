@@ -74,4 +74,13 @@ class MiddlewareTest < Test::Unit::TestCase
     assert_equal ['test-user'], res[2]
   end
 
+  def test_authenticated_request_with_query_parameter
+    token = Auth.issue_token('test-user')
+    env = Rack::MockRequest.env_for("/test?access_token=#{CGI.escape(token)}")
+    res = app.call(env)
+    assert_equal 200, res[0]
+    assert_equal nil, res[1]['WWW-Authenticate']
+    assert_equal ['test-user'], res[2]
+  end
+
 end
