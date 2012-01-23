@@ -7,18 +7,32 @@ require 'auth'
 module Auth
   class Middleware < Rack::Auth::AbstractHandler
 
+    def initialize(app, realm=nil, options={}, &authenticator)
+      super(app, realm, &authenticator)
+      @options = options
+    end
+
     def call(env)
       auth = Request.new(env)
 
-      return unauthorized unless auth.provided?
-      return bad_request unless auth.bearer?
+      unless @options[:allow_unauthenticated]
+        return unauthorized unless auth.provided?
+        return bad_request unless auth.bearer?
+      end
 
-      if valid?(auth)
+      if auth.provided? && valid?(auth)
         env['REMOTE_USER'] = auth.account_id
         return @app.call(env)
       end
 
-      unauthorized
+      if @options[:allow_unauthenticated]
+        res = @app.call(env)
+        return [res[0],
+                res[1].merge('WWW-Authenticate' => challenge),
+                res[2]]
+      else
+        unauthorized
+      end
     end
 
     private
