@@ -21,11 +21,10 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files  = [ "LICENSE", "README.md" ]
   s.rdoc_options      = ["--charset=UTF-8"]
 
-  s.add_dependency('json', '> 1.0.0')
-  s.add_dependency('rack-contrib',  '> 1.0.0')
-  s.add_dependency('sinatra',  '> 1.0.0')
-  s.add_dependency('redis',  '> 2.0.0')
-  s.add_dependency('redis-namespace',  '> 0.8.0')
+  s.add_dependency('json', '~> 1.0')
+  s.add_dependency('rack-contrib',  '~> 1.0')
+  s.add_dependency('sinatra',  '~> 1.0')
+  s.add_dependency('redis-namespace',  '~> 1.0')
 
-  s.add_development_dependency('rack-test',  '> 0.5.6')
+  s.add_development_dependency('rack-test')
 end
